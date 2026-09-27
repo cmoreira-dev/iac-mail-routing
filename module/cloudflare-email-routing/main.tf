@@ -18,8 +18,10 @@ locals {
 }
 
 resource "cloudflare_email_routing_dns" "this" {
+  # `name` is deliberately omitted: the API rejects it when set to the zone's
+  # own apex domain ("must be a subdomain of <domain>") — zone_id alone is
+  # enough to enable routing on the root domain.
   zone_id = local.zone_id
-  name    = data.cloudflare_zone.this.name
 }
 
 resource "cloudflare_email_routing_address" "destination" {
