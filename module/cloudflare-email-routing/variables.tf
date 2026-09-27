@@ -4,8 +4,8 @@ variable "domain_name" {
 }
 
 variable "addresses" {
-  description = "Map of local-part (without the domain) to one or more destination mailboxes, e.g. { contato = [\"you@gmail.com\", \"someone-else@gmail.com\"] }. One routing rule is created per entry, forwarding to every listed destination."
-  type        = map(list(string))
+  description = "Map of local-part (without the domain) to a single destination mailbox, e.g. { contato = \"you@gmail.com\" }. One routing rule is created per entry. Cloudflare Email Routing does not support forwarding one address to more than one destination — neither in a single rule nor via multiple rules on the same matcher (\"Duplicated Zone rule\")."
+  type        = map(string)
 }
 
 variable "catch_all_action" {
@@ -14,8 +14,8 @@ variable "catch_all_action" {
   default     = "drop"
 }
 
-variable "catch_all_destinations" {
-  description = "Destination mailboxes for the catch-all rule when catch_all_action is \"forward\" (ignored otherwise)"
-  type        = list(string)
-  default     = []
+variable "catch_all_destination" {
+  description = "Destination mailbox for the catch-all rule when catch_all_action is \"forward\" (ignored otherwise)"
+  type        = string
+  default     = null
 }

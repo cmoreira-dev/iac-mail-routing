@@ -15,20 +15,6 @@ data "cloudflare_zone" "this" {
 
 locals {
   zone_id = data.cloudflare_zone.this.id
-
-  # Cloudflare rejects a forward action with more than one destination
-  # ("forward action must contain exactly one destination"), even though a
-  # single local-part in `addresses` may list several. So one rule is created
-  # per (local-part, destination) pair instead of per local-part — all
-  # matching the same "to" address, each forwarding to just one mailbox.
-  rule_pairs = merge([
-    for local_part, destinations in var.addresses : {
-      for destination in destinations : "${local_part}::${destination}" => {
-        local_part  = local_part
-        destination = destination
-      }
-    }
-  ]...)
 }
 
 resource "cloudflare_email_routing_dns" "this" {
@@ -40,8 +26,8 @@ resource "cloudflare_email_routing_dns" "this" {
 
 resource "cloudflare_email_routing_address" "destination" {
   for_each = toset(distinct(concat(
-    flatten(values(var.addresses)),
-    var.catch_all_action == "forward" ? var.catch_all_destinations : [],
+    values(var.addresses),
+    var.catch_all_action == "forward" ? [var.catch_all_destination] : [],
   )))
 
   account_id = data.cloudflare_zone.this.account.id
@@ -49,22 +35,26 @@ resource "cloudflare_email_routing_address" "destination" {
 }
 
 resource "cloudflare_email_routing_rule" "address" {
-  for_each = local.rule_pairs
+  for_each = var.addresses
 
   zone_id  = local.zone_id
-  name     = "${each.value.local_part}@${data.cloudflare_zone.this.name} -> ${each.value.destination}"
+  name     = "${each.key}@${data.cloudflare_zone.this.name} -> ${each.value}"
   enabled  = true
-  priority = 10 + index(sort(keys(local.rule_pairs)), each.key)
+  priority = 10 + index(sort(keys(var.addresses)), each.key)
 
   matchers = [{
     type  = "literal"
     field = "to"
-    value = "${each.value.local_part}@${data.cloudflare_zone.this.name}"
+    value = "${each.key}@${data.cloudflare_zone.this.name}"
   }]
 
   actions = [{
+    # Cloudflare rejects more than one value here ("forward action must
+    # contain exactly one destination"), and also rejects a second rule
+    # matching the same address ("Duplicated Zone rule") — so one address
+    # can only ever forward to a single destination.
     type  = "forward"
-    value = [each.value.destination]
+    value = [each.value]
   }]
 
   depends_on = [
@@ -81,10 +71,8 @@ resource "cloudflare_email_routing_catch_all" "this" {
   matchers = [{ type = "all" }]
 
   actions = [{
-    # Cloudflare's catch-all action supports at most one forward destination,
-    # unlike a regular routing rule.
     type  = var.catch_all_action
-    value = var.catch_all_action == "forward" ? [var.catch_all_destinations[0]] : []
+    value = var.catch_all_action == "forward" ? [var.catch_all_destination] : []
   }]
 
   depends_on = [cloudflare_email_routing_dns.this]

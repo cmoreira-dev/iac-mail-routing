@@ -29,22 +29,25 @@ validate` (via `tofu validate`) passes on all four as-is.
 ### `cloudflare-email-routing`
 
 Given `domain_name` (the zone is looked up from it — never pass a raw zone
-ID), `addresses` (local-part -> one or more destination mailboxes) and a
+ID), `addresses` (local-part -> a single destination mailbox) and a
 catch-all policy:
 
 - `cloudflare_email_routing_dns` enables Email Routing on the zone — this is
   the resource that makes Cloudflare add the MX + its own SPF include, no
   `cloudflare_dns_record` needed for that part.
 - One `cloudflare_email_routing_address` per distinct destination mailbox
-  (deduped across every list in `addresses` and the catch-all destination,
-  if forwarding).
+  (deduped across `addresses` and the catch-all destination, if forwarding).
 - One `cloudflare_email_routing_rule` per entry in `addresses`, matching the
-  full `local-part@domain` and forwarding to all of that entry's
-  destinations at once.
+  full `local-part@domain` and forwarding to its destination.
 - One `cloudflare_email_routing_catch_all` for anything not explicitly
-  listed — `drop` or `forward`, via `catch_all_action` (Cloudflare's
-  catch-all only supports a single forward destination, unlike a regular
-  rule — only `catch_all_destinations[0]` is used).
+  listed — `drop` or `forward`, via `catch_all_action`.
+
+**Cloudflare does not support forwarding one address to more than one
+destination.** A forward action with more than one value is rejected
+("forward action must contain exactly one destination"), and so is a second
+rule matching the same address ("Duplicated Zone rule") — confirmed live
+against the real API, not just the docs. If several people need the same
+mail, route it to one mailbox and forward/distribute from there.
 
 **Manual step Terraform cannot do:** Cloudflare emails every new destination
 address a confirmation link. Until that's clicked, the address (and any rule
@@ -73,7 +76,7 @@ terraform {
 inputs = {
   domain_name = "example.com"
   addresses = {
-    contato = ["you@gmail.com", "someone-else@gmail.com"]
+    contato = "you@gmail.com"
   }
 }
 ```
