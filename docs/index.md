@@ -21,10 +21,30 @@ domain's inbound MX/SPF, the second owns the mail subdomain's outbound
 records. Keeping them apart means a Terragrunt unit that only needs inbound
 routing (no SES yet) doesn't have to pass SES outputs it doesn't have.
 
-Right now all four submodules are empty scaffolding (`providers.tf` pinning
-versions + `variables.tf` declaring the intended interface) — the resources
-themselves land in later phases. `terraform validate` (via `tofu validate`)
-passes on each as-is; there is nothing to plan or apply yet.
+`cloudflare-email-routing` is implemented. The other three are still empty
+scaffolding (`providers.tf` pinning versions + `variables.tf` declaring the
+intended interface) — their resources land in later phases. `terraform
+validate` (via `tofu validate`) passes on all four as-is.
+
+### `cloudflare-email-routing`
+
+Given `domain_name` (the zone is looked up from it — never pass a raw zone
+ID), `addresses` (local-part -> destination mailbox) and a catch-all policy:
+
+- `cloudflare_email_routing_dns` enables Email Routing on the zone — this is
+  the resource that makes Cloudflare add the MX + its own SPF include, no
+  `cloudflare_dns_record` needed for that part.
+- One `cloudflare_email_routing_address` per distinct destination mailbox
+  (deduped across `addresses` and the catch-all destination, if forwarding).
+- One `cloudflare_email_routing_rule` per entry in `addresses`, matching the
+  full `local-part@domain` and forwarding to its destination.
+- One `cloudflare_email_routing_catch_all` for anything not explicitly
+  listed — `drop` or `forward`, via `catch_all_action`.
+
+**Manual step Terraform cannot do:** Cloudflare emails every new destination
+address a confirmation link. Until that's clicked, the address (and any rule
+pointing at it) stays `unverified` and mail is not actually delivered. Check
+the `address_verification_status` output after apply.
 
 ## Usage
 
@@ -46,7 +66,7 @@ terraform {
 }
 
 inputs = {
-  zone_id = "..."
+  domain_name = "example.com"
   addresses = {
     contato = "you@gmail.com"
   }
@@ -64,7 +84,6 @@ that unit's `inputs`, never in this module.
 
 ## Pending
 
-- [ ] Implement `cloudflare-email-routing` resources (a later phase).
 - [ ] Implement `aws-ses-domain`, `aws-ses-smtp-user` and
       `cloudflare-mail-dns` resources (a later phase).
 - [ ] Once tagging starts, pin consumers' `?ref=` to a released tag instead
