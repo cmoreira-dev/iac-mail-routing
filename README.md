@@ -21,10 +21,8 @@ domain's inbound MX/SPF, the second owns the mail subdomain's outbound
 records. Keeping them apart means a Terragrunt unit that only needs inbound
 routing (no SES yet) doesn't have to pass SES outputs it doesn't have.
 
-`cloudflare-email-routing` is implemented. The other three are still empty
-scaffolding (`providers.tf` pinning versions + `variables.tf` declaring the
-intended interface) — their resources land in later phases. `terraform
-validate` (via `tofu validate`) passes on all four as-is.
+All four submodules are implemented. `terraform validate` (via `tofu
+validate`) passes on all four modules.
 
 ### `cloudflare-email-routing`
 
@@ -92,7 +90,8 @@ that unit's `inputs`, never in this module.
 
 ## Pending
 
-- [ ] Implement `aws-ses-domain`, `aws-ses-smtp-user` and
-      `cloudflare-mail-dns` resources (a later phase).
+- [x] Implement `aws-ses-domain` resources and expose the DKIM tokens and
+      custom MAIL FROM MX target consumed by `cloudflare-mail-dns`.
+- [x] Implement `aws-ses-smtp-user` and `cloudflare-mail-dns` resources.
 - [ ] Once tagging starts, pin consumers' `?ref=` to a released tag instead
       of `main`.

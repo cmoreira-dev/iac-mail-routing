@@ -1,6 +1,3 @@
-# Interface for a later phase — declared now so consumers can already see the
-# contract this module will expose. No resource reads these yet.
-
 variable "domain_name" {
   description = "Domain to create the mail DNS records on, e.g. \"example.com\" — the zone ID is looked up from this, so callers never need to hardcode it"
   type        = string
@@ -25,6 +22,11 @@ variable "dmarc_policy" {
   description = "DMARC policy (\"none\", \"quarantine\" or \"reject\") — start at \"none\" and tighten after a clean reporting period"
   type        = string
   default     = "none"
+
+  validation {
+    condition     = contains(["none", "quarantine", "reject"], var.dmarc_policy)
+    error_message = "dmarc_policy must be one of: none, quarantine, reject."
+  }
 }
 
 variable "dmarc_report_address" {
