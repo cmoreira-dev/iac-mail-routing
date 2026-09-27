@@ -1,6 +1,3 @@
-# Interface for a later phase — declared now so consumers can already see the
-# contract this module will expose. No resource reads these yet.
-
 variable "users" {
   description = "Map of logical user key to its config. Each becomes one IAM user + access key, scoped to one SES action, with its credentials written to SSM."
   type = map(object({
@@ -10,4 +7,11 @@ variable "users" {
     ses_identity_arn      = string
     configuration_set_arn = optional(string)
   }))
+
+  validation {
+    condition = alltrue([
+      for user in values(var.users) : contains(["ses:SendEmail", "ses:SendRawEmail"], user.ses_action)
+    ])
+    error_message = "ses_action must be ses:SendEmail or ses:SendRawEmail."
+  }
 }
