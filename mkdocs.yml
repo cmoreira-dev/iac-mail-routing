@@ -1,0 +1,8 @@
+site_name: 'iac-mail-routing'
+site_description: 'Reusable Terraform module: Cloudflare Email Routing + Amazon SES transactional mail'
+
+nav:
+  - Home: index.md
+
+plugins:
+  - techdocs-core

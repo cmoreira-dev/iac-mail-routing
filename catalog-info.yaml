@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: iac-mail-routing
+  description: >-
+    Reusable Terraform module: Cloudflare Email Routing (inbound) + Amazon
+    SES (outbound transactional mail) + the Cloudflare DNS records that tie
+    the two together. Not tied to any one product.
+  annotations:
+    github.com/project-slug: cmoreira-dev/iac-mail-routing
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: library
+  owner: platform-team
+  system: homelab-platform
+  lifecycle: production
