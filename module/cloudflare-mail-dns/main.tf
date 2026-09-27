@@ -29,11 +29,8 @@ resource "cloudflare_dns_record" "mail_from_mx" {
   name    = var.mail_from_subdomain
   type    = "MX"
   ttl     = 300
-
-  data = {
-    priority = 10
-    target   = var.ses_mail_from_mx
-  }
+  content = var.ses_mail_from_mx
+  priority = 10
 }
 
 resource "cloudflare_dns_record" "mail_from_spf" {
