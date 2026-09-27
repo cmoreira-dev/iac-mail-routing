@@ -1,3 +1,73 @@
-# Inbound email routing (MX + Cloudflare's own SPF, destination addresses,
-# per-address rules, catch-all). Resources land here in a later phase, once
-# the zone/addresses/rules inputs below are consumed by a Terragrunt unit.
+# Inbound email routing: enables Email Routing on the zone (Cloudflare adds
+# the MX + its own SPF include automatically via this resource — no
+# `cloudflare_dns_record` needed for that part), verifies/creates the
+# destination mailboxes, and adds one forwarding rule per address plus a
+# catch-all.
+#
+# Manual step, outside Terraform: Cloudflare emails each new destination
+# address to confirm it. The address (and any rule pointing at it) stays
+# "unverified" — mail is not actually delivered — until that link is
+# clicked. `terraform apply` cannot do this for you.
+
+data "cloudflare_zone" "this" {
+  filter = { name = var.domain_name }
+}
+
+locals {
+  zone_id = data.cloudflare_zone.this.id
+}
+
+resource "cloudflare_email_routing_dns" "this" {
+  zone_id = local.zone_id
+  name    = data.cloudflare_zone.this.name
+}
+
+resource "cloudflare_email_routing_address" "destination" {
+  for_each = toset(distinct(concat(
+    values(var.addresses),
+    var.catch_all_action == "forward" ? [var.catch_all_destination] : [],
+  )))
+
+  account_id = data.cloudflare_zone.this.account.id
+  email      = each.value
+}
+
+resource "cloudflare_email_routing_rule" "address" {
+  for_each = var.addresses
+
+  zone_id  = local.zone_id
+  name     = "${each.key}@${data.cloudflare_zone.this.name}"
+  enabled  = true
+  priority = 10 + index(sort(keys(var.addresses)), each.key)
+
+  matchers = [{
+    type  = "literal"
+    field = "to"
+    value = "${each.key}@${data.cloudflare_zone.this.name}"
+  }]
+
+  actions = [{
+    type  = "forward"
+    value = [each.value]
+  }]
+
+  depends_on = [
+    cloudflare_email_routing_dns.this,
+    cloudflare_email_routing_address.destination,
+  ]
+}
+
+resource "cloudflare_email_routing_catch_all" "this" {
+  zone_id = local.zone_id
+  name    = "catch-all"
+  enabled = true
+
+  matchers = [{ type = "all" }]
+
+  actions = [{
+    type  = var.catch_all_action
+    value = var.catch_all_action == "forward" ? [var.catch_all_destination] : []
+  }]
+
+  depends_on = [cloudflare_email_routing_dns.this]
+}

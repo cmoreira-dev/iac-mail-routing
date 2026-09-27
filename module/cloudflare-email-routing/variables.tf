@@ -1,8 +1,5 @@
-# Interface for a later phase — declared now so consumers can already see the
-# contract this module will expose. No resource reads these yet.
-
-variable "zone_id" {
-  description = "Cloudflare zone ID to enable Email Routing on"
+variable "domain_name" {
+  description = "Domain to enable Email Routing on, e.g. \"example.com\" — the zone ID is looked up from this, so callers never need to hardcode it"
   type        = string
 }
 

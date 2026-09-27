@@ -1,8 +1,8 @@
 # Interface for a later phase — declared now so consumers can already see the
 # contract this module will expose. No resource reads these yet.
 
-variable "zone_id" {
-  description = "Cloudflare zone ID to create the mail DNS records on"
+variable "domain_name" {
+  description = "Domain to create the mail DNS records on, e.g. \"example.com\" — the zone ID is looked up from this, so callers never need to hardcode it"
   type        = string
 }
 
