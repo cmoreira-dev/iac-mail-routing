@@ -24,8 +24,8 @@ resource "cloudflare_email_routing_dns" "this" {
 
 resource "cloudflare_email_routing_address" "destination" {
   for_each = toset(distinct(concat(
-    values(var.addresses),
-    var.catch_all_action == "forward" ? [var.catch_all_destination] : [],
+    flatten(values(var.addresses)),
+    var.catch_all_action == "forward" ? var.catch_all_destinations : [],
   )))
 
   account_id = data.cloudflare_zone.this.account.id
@@ -48,7 +48,7 @@ resource "cloudflare_email_routing_rule" "address" {
 
   actions = [{
     type  = "forward"
-    value = [each.value]
+    value = each.value
   }]
 
   depends_on = [
@@ -65,8 +65,10 @@ resource "cloudflare_email_routing_catch_all" "this" {
   matchers = [{ type = "all" }]
 
   actions = [{
+    # Cloudflare's catch-all action supports at most one forward destination,
+    # unlike a regular routing rule.
     type  = var.catch_all_action
-    value = var.catch_all_action == "forward" ? [var.catch_all_destination] : []
+    value = var.catch_all_action == "forward" ? [var.catch_all_destinations[0]] : []
   }]
 
   depends_on = [cloudflare_email_routing_dns.this]
