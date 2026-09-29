@@ -24,15 +24,27 @@ resource "aws_iam_user_policy" "ses" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Sid    = "AllowScopedSESSend"
-      Effect = "Allow"
-      Action = each.value.ses_action
-      Resource = compact([
-        each.value.ses_identity_arn,
-        try(each.value.configuration_set_arn, null),
-      ])
-    }]
+    Statement = concat(
+      [{
+        Sid    = "AllowScopedSESSend"
+        Effect = "Allow"
+        Action = each.value.ses_action
+        Resource = compact([
+          each.value.ses_identity_arn,
+          try(each.value.configuration_set_arn, null),
+        ])
+      }],
+      try(each.value.sqs_consume_queue_arn, null) == null ? [] : [{
+        Sid    = "AllowConsumeSESEventsQueue"
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+        ]
+        Resource = [each.value.sqs_consume_queue_arn]
+      }],
+    )
   })
 }
 

@@ -17,3 +17,13 @@ output "configuration_set_arn" {
   description = "ARN of the SES configuration set"
   value       = aws_sesv2_configuration_set.this.arn
 }
+
+output "sqs_queue_arn" {
+  description = "ARN of the SQS queue that receives SES bounce/complaint/delivery events"
+  value       = aws_sqs_queue.this.arn
+}
+
+output "sqs_queue_url" {
+  description = "URL of the SQS queue that receives SES bounce/complaint/delivery events"
+  value       = aws_sqs_queue.this.url
+}

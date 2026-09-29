@@ -6,6 +6,7 @@ variable "users" {
     ssm_parameter_path    = string # e.g. "/product/ses/api/"
     ses_identity_arn      = string
     configuration_set_arn = optional(string)
+    sqs_consume_queue_arn = optional(string) # if set, the user may also read/delete messages from this queue (bounce/complaint worker)
   }))
 
   validation {
