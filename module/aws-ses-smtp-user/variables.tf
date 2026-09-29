@@ -7,6 +7,7 @@ variable "users" {
     ses_identity_arn      = string
     configuration_set_arn = optional(string)
     sqs_consume_queue_arn = optional(string) # if set, the user may also read/delete messages from this queue (bounce/complaint worker)
+    s3_uploads_bucket_arn = optional(string) # if set, the user may also stage objects under uploads/ in this bucket (durable analysis queue)
   }))
 
   validation {

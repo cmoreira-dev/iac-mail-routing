@@ -44,6 +44,27 @@ resource "aws_iam_user_policy" "ses" {
         ]
         Resource = [each.value.sqs_consume_queue_arn]
       }],
+      try(each.value.s3_uploads_bucket_arn, null) == null ? [] : [{
+        Sid    = "AllowUploadsObjects"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:AbortMultipartUpload",
+          "s3:ListMultipartUploadParts",
+        ]
+        Resource = ["${each.value.s3_uploads_bucket_arn}/uploads/*"]
+      }],
+      # Without ListBucket, S3 answers 403 (not 404) for a missing key, which
+      # would make a deleted/expired upload look like a permissions problem.
+      try(each.value.s3_uploads_bucket_arn, null) == null ? [] : [{
+        Sid       = "AllowListUploadsPrefix"
+        Effect    = "Allow"
+        Action    = ["s3:ListBucket"]
+        Resource  = [each.value.s3_uploads_bucket_arn]
+        Condition = { StringLike = { "s3:prefix" = ["uploads/*"] } }
+      }],
     )
   })
 }
