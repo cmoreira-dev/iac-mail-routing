@@ -54,11 +54,11 @@ the `address_verification_status` output after apply.
 
 ## Usage
 
-Consumed via Terragrunt from `infra-as-code/iac.homelab-live-infra`, one unit
+Consumed via Terragrunt from `<live-infra-repo>`, one unit
 per submodule, pointing `source` at the submodule path:
 
 ```hcl
-# iac.homelab-live-infra/cloudflare/email-routing/terragrunt.hcl (example)
+# <live-infra-repo>/cloudflare/email-routing/terragrunt.hcl (example)
 include "root" {
   path = find_in_parent_folders("root.hcl")
 }
