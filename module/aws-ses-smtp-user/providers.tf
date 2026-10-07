@@ -11,5 +11,5 @@ terraform {
 
 # The `provider "aws"` block is intentionally NOT declared here. This module
 # is consumed via Terragrunt, which generates the provider from
-# `iac.homelab-live-infra/_providers/aws.hcl`. Declaring one here would
+# `<live-infra-repo>/_providers/aws.hcl`. Declaring one here would
 # collide with that.
