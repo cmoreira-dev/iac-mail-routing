@@ -7,7 +7,6 @@ metadata:
     SES (outbound transactional mail) + the Cloudflare DNS records that tie
     the two together. Not tied to any one product.
   annotations:
-    github.com/project-slug: cmoreira-dev/iac-mail-routing
     backstage.io/techdocs-ref: dir:.
 spec:
   type: library
